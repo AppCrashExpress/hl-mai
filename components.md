@@ -30,6 +30,7 @@ Rel(store_front, cart_service, "Добавляет товар в корзину 
 
 Rel(auth_service, user_db, "CRUD операция", "SQL")
 Rel(commodity_service, commodity_db, "CRUD операция", "SQL")
+Rel(cart_service, cart_db, "CRUD операция", "SQL")
 
 @enduml
 ```
