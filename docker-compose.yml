@@ -1,0 +1,63 @@
+version: '2.1'
+
+services:
+  maria-db:
+    build:
+      context: mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: archdb
+      MYSQL_USER: stud
+      MYSQL_PASSWORD: stud
+      MYSQL_ROOT_PASSWORD: '1'
+    command: >
+      --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+      --general-log=ON
+      --log-queries-not-using-indexes=ON
+    networks:
+      - arch-network
+    ports:
+      - 3360:3306
+    healthcheck:
+      test: "/usr/bin/mysql --user=stud --password=stud --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 5
+    volumes:
+      - maria-db-volume:/var/lib/mysql
+
+  auth_service:
+    build:
+      context: .
+    environment:
+      - DB_HOST=maria-db
+      - DB_PORT=3306
+      - DB_DATABASE=archdb
+      - DB_LOGIN=stud
+      - DB_PASSWORD=stud
+    ports:
+      - 8080:8080
+    entrypoint: /app/build/auth_service
+    networks:
+      - arch-network
+    depends_on:
+      maria-db:
+        condition: service_healthy
+
+  other_service:
+    build:
+      context: .
+    environment:
+      - SERVICE_HOST=auth_service
+    ports:
+      - 8081:8081
+    entrypoint: /app/build/other_service
+    networks:
+      - arch-network
+
+volumes:
+  maria-db-volume:
+
+networks:
+  arch-network:
+    driver: "bridge"
+    external: false
