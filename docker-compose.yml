@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  maria-db:
+  auth-db:
     build:
       context: mariadb
     restart: unless-stopped
@@ -25,11 +25,11 @@ services:
     volumes:
       - maria-db-volume:/var/lib/mysql
 
-  auth_service:
+  auth-service:
     build:
       context: .
     environment:
-      - DB_HOST=maria-db
+      - DB_HOST=auth-db
       - DB_PORT=3306
       - DB_DATABASE=archdb
       - DB_LOGIN=stud
@@ -40,14 +40,14 @@ services:
     networks:
       - arch-network
     depends_on:
-      maria-db:
+      auth-db:
         condition: service_healthy
 
-  other_service:
+  other-service:
     build:
       context: .
     environment:
-      - SERVICE_HOST=auth_service
+      - SERVICE_HOST=auth-service
     ports:
       - 8081:8081
     entrypoint: /app/build/other_service

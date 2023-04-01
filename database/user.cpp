@@ -30,7 +30,7 @@ void User::init() {
                 << "`login` VARCHAR(256) NOT NULL,"
                 << "`password` VARCHAR(256) NOT NULL,"
                 << "`email` VARCHAR(256) NULL,"
-                << "`title` VARCHAR(1024) NULL,"
+                << "`gender` VARCHAR(16) NULL,"
                 << "PRIMARY KEY (`id`),KEY `fn` (`first_name`),KEY `ln` "
                    "(`last_name`));",
         now;
@@ -53,7 +53,7 @@ Poco::JSON::Object::Ptr User::toJSON() const {
   root->set("first_name", _first_name);
   root->set("last_name", _last_name);
   root->set("email", _email);
-  root->set("title", _title);
+  root->set("gender", _gender);
   root->set("login", _login);
   root->set("password", _password);
 
@@ -70,7 +70,7 @@ User User::fromJSON(const std::string& str) {
   user.first_name() = object->getValue<std::string>("first_name");
   user.last_name() = object->getValue<std::string>("last_name");
   user.email() = object->getValue<std::string>("email");
-  user.title() = object->getValue<std::string>("title");
+  user.gender() = object->getValue<std::string>("gender");
   user.login() = object->getValue<std::string>("login");
   user.password() = object->getValue<std::string>("password");
 
@@ -105,10 +105,10 @@ std::optional<User> User::read_by_id(long id) {
     Poco::Data::Session session = database::Database::get().create_session();
     Poco::Data::Statement select(session);
     User a;
-    select << "SELECT id, first_name, last_name, email, title,login,password "
+    select << "SELECT id, first_name, last_name, email, gender,login,password "
               "FROM User where id=?",
         into(a._id), into(a._first_name), into(a._last_name), into(a._email),
-        into(a._title), into(a._login), into(a._password), use(id),
+        into(a._gender), into(a._login), into(a._password), use(id),
         range(0, 1);  //  iterate over result set one row at a time
 
     select.execute();
@@ -132,10 +132,10 @@ std::vector<User> User::read_all() {
     Statement select(session);
     std::vector<User> result;
     User a;
-    select << "SELECT id, first_name, last_name, email, title, login, password "
+    select << "SELECT id, first_name, last_name, email, gender, login, password "
               "FROM User",
         into(a._id), into(a._first_name), into(a._last_name), into(a._email),
-        into(a._title), into(a._login), into(a._password),
+        into(a._gender), into(a._login), into(a._password),
         range(0, 1);  //  iterate over result set one row at a time
 
     while (!select.done()) {
@@ -163,10 +163,10 @@ std::vector<User> User::search(std::string first_name, std::string last_name) {
     User a;
     first_name += "%";
     last_name += "%";
-    select << "SELECT id, first_name, last_name, email, title, login, password "
+    select << "SELECT id, first_name, last_name, email, gender, login, password "
               "FROM User where first_name LIKE ? and last_name LIKE ?",
         into(a._id), into(a._first_name), into(a._last_name), into(a._email),
-        into(a._title), into(a._login), into(a._password), use(first_name),
+        into(a._gender), into(a._login), into(a._password), use(first_name),
         use(last_name),
         range(0, 1);  //  iterate over result set one row at a time
 
@@ -194,9 +194,9 @@ void User::save_to_mysql() {
     Poco::Data::Statement insert(session);
 
     insert
-        << "INSERT INTO User (first_name,last_name,email,title,login,password) "
+        << "INSERT INTO User (first_name,last_name,email,gender,login,password) "
            "VALUES(?, ?, ?, ?, ?, ?)",
-        use(_first_name), use(_last_name), use(_email), use(_title),
+        use(_first_name), use(_last_name), use(_email), use(_gender),
         use(_login), use(_password);
 
     insert.execute();
@@ -251,8 +251,8 @@ const std::string& User::get_email() const {
   return _email;
 }
 
-const std::string& User::get_title() const {
-  return _title;
+const std::string& User::get_gender() const {
+  return _gender;
 }
 
 long& User::id() {
@@ -271,7 +271,7 @@ std::string& User::email() {
   return _email;
 }
 
-std::string& User::title() {
-  return _title;
+std::string& User::gender() {
+  return _gender;
 }
 }  // namespace database
