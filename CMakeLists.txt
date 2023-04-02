@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(AUTH_SERVICE "auth_service")
 set(PRODUCT_SERVICE "product_service")
+set(CART_SERVICE "cart_service")
 set(OTHER_SERVICE "other_service")
 
 find_package(OpenSSL)
@@ -42,7 +43,6 @@ target_link_libraries(${AUTH_SERVICE} PRIVATE
                              "mysqlclient"
                              ZLIB::ZLIB)
 
-
 add_executable(${PRODUCT_SERVICE} product_service/main.cpp
                                  config/config.cpp
                                  database/database.cpp
@@ -52,6 +52,22 @@ target_compile_options(${PRODUCT_SERVICE} PRIVATE -Wall -Wextra -pedantic -Werro
 set_target_properties(${PRODUCT_SERVICE} PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(${PRODUCT_SERVICE} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(${PRODUCT_SERVICE} PRIVATE
+                             ${CMAKE_THREAD_LIBS_INIT}
+                             ${Poco_LIBRARIES}
+                             "PocoData"
+                             "PocoDataMySQL"
+                             "mysqlclient"
+                             ZLIB::ZLIB)
+
+add_executable(${CART_SERVICE} cart_service/main.cpp
+                                 config/config.cpp
+                                 database/database.cpp
+                                 database/cart.cpp)
+target_include_directories(${CART_SERVICE} PRIVATE "${CMAKE_BINARY_DIR}")
+target_compile_options(${CART_SERVICE} PRIVATE -Wall -Wextra -pedantic -Werror )
+set_target_properties(${CART_SERVICE} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${CART_SERVICE} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(${CART_SERVICE} PRIVATE
                              ${CMAKE_THREAD_LIBS_INIT}
                              ${Poco_LIBRARIES}
                              "PocoData"

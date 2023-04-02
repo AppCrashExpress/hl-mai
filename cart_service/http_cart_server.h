@@ -1,5 +1,5 @@
-#ifndef HTTPPRODUCTWEBSERVER_H
-#define HTTPPRODUCTWEBSERVER_H
+#ifndef HTTPCARTWEBSERVER_H
+#define HTTPCARTWEBSERVER_H
 
 #include "Poco/DateTimeFormat.h"
 #include "Poco/DateTimeFormatter.h"
@@ -36,14 +36,14 @@ using Poco::Util::OptionCallback;
 using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
 
-#include "../database/product.h"
+#include "../database/cart.h"
 #include "http_request_factory.h"
 
-class HTTPProductServer : public Poco::Util::ServerApplication {
+class HTTPCartServer : public Poco::Util::ServerApplication {
  public:
-  HTTPProductServer() : _helpRequested(false) {}
+  HTTPCartServer() : _helpRequested(false) {}
 
-  ~HTTPProductServer() {}
+  ~HTTPCartServer() {}
 
  protected:
   void initialize(Application& self) {
@@ -55,8 +55,8 @@ class HTTPProductServer : public Poco::Util::ServerApplication {
 
   int main([[maybe_unused]] const std::vector<std::string>& args) {
     if (!_helpRequested) {
-      database::Product::init();
-      ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", 8081));
+      database::Cart::init();
+      ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", 8082));
       HTTPServer srv(new HTTPRequestFactory(DateTimeFormat::SORTABLE_FORMAT),
                      svs, new HTTPServerParams);
       srv.start();
@@ -69,4 +69,4 @@ class HTTPProductServer : public Poco::Util::ServerApplication {
  private:
   bool _helpRequested;
 };
-#endif  // !HTTPPRODUCTWEBSERVER_H
+#endif  // !HTTPCARTWEBSERVER_H

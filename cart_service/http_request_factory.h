@@ -1,6 +1,9 @@
-#ifndef HTTPPRODUCTWEBSERVER_H
-#define HTTPPRODUCTWEBSERVER_H
+#ifndef HTTPCARTREQUESTFACTORY_H
+#define HTTPCARTREQUESTFACTORY_H
 
+#include <iostream>
+#include <vector>
+#include <string>
 #include "Poco/DateTimeFormat.h"
 #include "Poco/DateTimeFormatter.h"
 #include "Poco/Exception.h"
@@ -36,37 +39,28 @@ using Poco::Util::OptionCallback;
 using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
 
-#include "../database/product.h"
-#include "http_request_factory.h"
+#include "handlers/cart_handler.h"
+#include "../helper.h"
 
-class HTTPProductServer : public Poco::Util::ServerApplication {
+class HTTPRequestFactory : public HTTPRequestHandlerFactory {
  public:
-  HTTPProductServer() : _helpRequested(false) {}
+  HTTPRequestFactory(const std::string& format) : _format(format) {}
 
-  ~HTTPProductServer() {}
+  HTTPRequestHandler* createRequestHandler(const HTTPServerRequest& request) {
+    const std::vector<std::string> allowed_paths{ "/add", "/get" };
 
- protected:
-  void initialize(Application& self) {
-    loadConfiguration();
-    ServerApplication::initialize(self);
-  }
-
-  void uninitialize() { ServerApplication::uninitialize(); }
-
-  int main([[maybe_unused]] const std::vector<std::string>& args) {
-    if (!_helpRequested) {
-      database::Product::init();
-      ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", 8081));
-      HTTPServer srv(new HTTPRequestFactory(DateTimeFormat::SORTABLE_FORMAT),
-                     svs, new HTTPServerParams);
-      srv.start();
-      waitForTerminationRequest();
-      srv.stop();
+    std::cout << "request:" << request.getURI() << std::endl;
+    for (const std::string& path : allowed_paths) {
+      if (hasSubstr(request.getURI(), path)) {
+        return new CartHandler(_format);
+      }
     }
-    return Application::EXIT_OK;
+
+    return 0;
   }
 
  private:
-  bool _helpRequested;
+  std::string _format;
 };
-#endif  // !HTTPPRODUCTWEBSERVER_H
+
+#endif
