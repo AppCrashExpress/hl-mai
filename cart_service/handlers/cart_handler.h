@@ -55,18 +55,10 @@ class CartHandler : public HTTPRequestHandler {
  public:
   CartHandler(const std::string& format) : _format(format) {}
 
-  std::optional<std::string> do_get(const std::string& url,
-                                    const std::string& login,
-                                    const std::string& password) {
+  std::optional<std::string> do_get(const std::string& url, const std::string& identity) {
     std::string string_result;
-    try {
-      std::string token = login + ":" + password;
-      std::ostringstream os;
-      Poco::Base64Encoder b64in(os);
-      b64in << token;
-      b64in.close();
-      std::string identity = "Basic " + os.str();
 
+    try {
       Poco::URI uri(url);
       Poco::Net::HTTPClientSession s(uri.getHost(), uri.getPort());
       Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET,
@@ -97,6 +89,19 @@ class CartHandler : public HTTPRequestHandler {
     }
 
     return string_result;
+  }
+
+  std::optional<std::string> do_get(const std::string& url,
+                                    const std::string& login,
+                                    const std::string& password) {
+    std::string token = login + ":" + password;
+    std::ostringstream os;
+    Poco::Base64Encoder b64in(os);
+    b64in << token;
+    b64in.close();
+    std::string identity = "Basic " + os.str();
+
+    return do_get(url, identity);
   }
 
   bool authRequest(HTTPServerRequest& request, long& user_id) {
@@ -131,6 +136,25 @@ class CartHandler : public HTTPRequestHandler {
     }
 
     return false;
+  }
+
+  bool checkProductExists(HTTPServerRequest& request, long product_id) {
+    HTMLForm form(request, request.stream());
+    std::string scheme;
+    std::string info;
+    std::string host = "localhost";
+    std::string url;
+    request.getCredentials(scheme, info);
+
+    std::string identity = scheme + " " + info;
+
+    if (std::getenv("PRODUCT_HOST") != nullptr) {
+      host = std::getenv("PRODUCT_HOST");
+    }
+    url = "http://" + host + ":8081/get?id=" + std::to_string(product_id);
+
+    std::optional<std::string> string_result = do_get(url, identity);
+    return string_result ? true : false;
   }
 
   void handleRequest(HTTPServerRequest& request, HTTPServerResponse& response) {
@@ -192,9 +216,24 @@ class CartHandler : public HTTPRequestHandler {
     HTMLForm form(request, request.stream());
 
     if (form.has("id")) {
+      long product_id = atol(form.get("id").c_str());
+      if (!checkProductExists(request, product_id)) {
+        response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
+        response.setChunkedTransferEncoding(true);
+        response.setContentType("application/json");
+        Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
+        root->set("type", "/errors/bad_request");
+        root->set("title", "Product with such ID is not found");
+        root->set("detail", "Product with such ID is not found");
+        root->set("instance", "/product");
+        std::ostream& ostr = response.send();
+        Poco::JSON::Stringifier::stringify(root, ostr);
+        return;
+      }
+
       database::Cart cart;
       cart.user_id() = user_id;
-      cart.product_ids().push_back( atol(form.get("id").c_str()) );
+      cart.product_ids().push_back(product_id);
       cart.save_to_mysql();
 
       response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);

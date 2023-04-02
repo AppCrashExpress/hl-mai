@@ -28,6 +28,8 @@ Rel(store_front, auth_service, "Проверяет введенные польз
 Rel(store_front, commodity_service, "Получает список товаров, создает новый или редактирует существующий", "API")
 Rel(store_front, cart_service, "Добавляет товар в корзину и показывает её содержимое", "API")
 
+Rel(cart_service, commodity_service, "Проверяет существование товара", "API")
+
 Rel(auth_service, user_db, "CRUD операция", "SQL")
 Rel(commodity_service, commodity_db, "CRUD операция", "SQL")
 Rel(cart_service, cart_db, "CRUD операция", "SQL")
