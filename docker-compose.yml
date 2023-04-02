@@ -25,6 +25,15 @@ services:
     volumes:
       - maria-db-volume:/var/lib/mysql
 
+  init-db:
+    build:
+      context: mariadb/data_generator
+    networks:
+      - arch-network
+    depends_on:
+      all-db:
+        condition: service_started
+
   auth-service:
     build:
       context: .
