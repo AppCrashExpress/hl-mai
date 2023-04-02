@@ -15,6 +15,19 @@ class MySQLConnection:
         self.cursor.close()
         self.cnx.close()
 
+    def get(self, command):
+        try:
+            self.cursor.execute(command)
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                print("already exists.")
+            else:
+                print(err.msg)
+        else:
+            print("get: OK")
+
+        return(list(self.cursor))
+
     def execute(self, command):
         try:
             self.cursor.execute(command)
@@ -24,7 +37,7 @@ class MySQLConnection:
             else:
                 print(err.msg)
         else:
-            print("OK")
+            print("execute: OK")
 
         self.cnx.commit()
 

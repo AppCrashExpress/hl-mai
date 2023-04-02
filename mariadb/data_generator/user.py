@@ -32,7 +32,7 @@ def generate_profile_list(n=1):
 
 def main():
     connection = MySQLConnection(
-        host="auth-db",
+        host="all-db",
         database="archdb",
         user="stud",
         password="stud"
