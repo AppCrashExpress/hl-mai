@@ -1,7 +1,9 @@
-#ifndef HTTPREQUESTFACTORY_H
-#define HTTPREQUESTFACTORY_H
+#ifndef HTTPPRODUCTREQUESTFACTORY_H
+#define HTTPPRODUCTREQUESTFACTORY_H
 
 #include <iostream>
+#include <vector>
+#include <string>
 #include "Poco/DateTimeFormat.h"
 #include "Poco/DateTimeFormatter.h"
 #include "Poco/Exception.h"
@@ -37,7 +39,7 @@ using Poco::Util::OptionCallback;
 using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
 
-#include "handlers/user_handler.h"
+#include "handlers/product_handler.h"
 #include "../helper.h"
 
 class HTTPRequestFactory : public HTTPRequestHandlerFactory {
@@ -45,12 +47,15 @@ class HTTPRequestFactory : public HTTPRequestHandlerFactory {
   HTTPRequestFactory(const std::string& format) : _format(format) {}
 
   HTTPRequestHandler* createRequestHandler(const HTTPServerRequest& request) {
+    const std::vector<std::string> allowed_paths{ "/create", "/get" };
 
     std::cout << "request:" << request.getURI() << std::endl;
-    if (hasSubstr(request.getURI(), "/user") ||
-        hasSubstr(request.getURI(), "/search") ||
-        hasSubstr(request.getURI(), "/auth"))
-      return new UserHandler(_format);
+    for (const std::string& path : allowed_paths) {
+      if (hasSubstr(request.getURI(), path)) {
+        return new ProductHandler(_format);
+      }
+    }
+
     return 0;
   }
 
