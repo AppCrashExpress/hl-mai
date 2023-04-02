@@ -32,7 +32,7 @@ services:
       - arch-network
     depends_on:
       all-db:
-        condition: service_started
+        condition: service_healthy
 
   auth-service:
     build:

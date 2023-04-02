@@ -239,8 +239,11 @@ class CartHandler : public HTTPRequestHandler {
       response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
       response.setChunkedTransferEncoding(true);
       response.setContentType("application/json");
+      Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
+      root->set("product_id", std::to_string(product_id));
+      root->set("user_id", std::to_string(user_id));
       std::ostream& ostr = response.send();
-      Poco::JSON::Stringifier::stringify(cart.toJSON(), ostr);
+      Poco::JSON::Stringifier::stringify(root, ostr);
       return;
     }
 
