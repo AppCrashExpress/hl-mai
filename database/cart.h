@@ -9,6 +9,8 @@
 namespace database {
 class Cart {
  private:
+  std::string get_sharding_hint();
+
   long _user_id;
   std::vector<long> _product_ids;
 

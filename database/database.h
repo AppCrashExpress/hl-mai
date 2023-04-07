@@ -7,6 +7,7 @@
 #include <Poco/Data/SessionPool.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace database {
 class Database {
@@ -18,6 +19,9 @@ class Database {
  public:
   static Database& get();
   Poco::Data::Session create_session();
+  static size_t get_max_shard();
+  static std::string get_sharding_hint(long hash);
+  static std::vector<std::string> get_all_sharding_hints();
 };
 }  // namespace database
 #endif

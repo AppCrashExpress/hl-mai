@@ -9,6 +9,8 @@
 namespace database {
 class User {
  private:
+  std::string get_sharding_hint();
+
   long _id;
   std::string _first_name;
   std::string _last_name;

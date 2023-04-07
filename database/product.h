@@ -9,6 +9,8 @@
 namespace database {
 class Product {
  private:
+  std::string get_sharding_hint();
+
   long _id;
   std::string _name;
   long _count;

@@ -21,14 +21,17 @@ namespace database {
 void Cart::init() {
   try {
     Poco::Data::Session session = database::Database::get().create_session();
-    Statement create_stmt(session);
-    create_stmt << "CREATE TABLE IF NOT EXISTS `Carts` ("
-                << "`id` INT NOT NULL AUTO_INCREMENT,"
-                << "`user_id` INT NOT NULL,"
-                << "`product_id` INT NOT NULL,"
-                << "PRIMARY KEY (`id`), KEY `uid` (`user_id`)"
-                << ");",
-        now;
+    for (const auto& hint : database::Database::get_all_sharding_hints()) {
+      Statement create_stmt(session);
+      create_stmt << "CREATE TABLE IF NOT EXISTS `Carts` ("
+                  << "`id` INT NOT NULL AUTO_INCREMENT,"
+                  << "`user_id` INT NOT NULL,"
+                  << "`product_id` INT NOT NULL,"
+                  << "PRIMARY KEY (`id`), KEY `uid` (`user_id`)"
+                  << ");"
+                  << hint,
+          now;
+    }
   }
 
   catch (Poco::Data::MySQL::ConnectionException& e) {
@@ -78,8 +81,10 @@ Cart Cart::read_by_user_id(long id) {
     Poco::Data::Session session = database::Database::get().create_session();
     Poco::Data::Statement select(session);
     Cart c;
+    c.user_id() = id;
     select << "SELECT id, user_id, product_id "
-              "FROM Carts where user_id=?", use(id);
+              "FROM Carts where user_id=? " +
+              c.get_sharding_hint(), use(id);
     select.execute();
 
     Poco::Data::RecordSet rs(select);
@@ -101,6 +106,10 @@ Cart Cart::read_by_user_id(long id) {
   return {};
 }
 
+std::string Cart::get_sharding_hint() {
+  return database::Database::get_sharding_hint(_user_id);
+}
+
 void Cart::save_to_mysql() {
   try {
     Poco::Data::Session session = database::Database::get().create_session();
@@ -113,7 +122,7 @@ void Cart::save_to_mysql() {
 
     insert
         << "INSERT INTO Carts (user_id, product_id) "
-           "VALUES(?, ?)",
+           "VALUES(?, ?) " + get_sharding_hint(),
         use(entry.user_id), use(entry.product_id);
 
     entry.user_id = _user_id;

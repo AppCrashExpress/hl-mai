@@ -21,6 +21,7 @@ def generate_product_list(n=1):
 def main():
     connection = MySQLConnection(
         host="all-db",
+        port="6033",
         database="archdb",
         user="stud",
         password="stud"

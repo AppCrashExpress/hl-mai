@@ -3,9 +3,10 @@ from mysql.connector import errorcode
 
 
 class MySQLConnection:
-    def __init__(self, *, host, database, user, password):
+    def __init__(self, *, host, port, database, user, password):
         self.cnx = mysql.connector.connect(
             host=host,
+            port=port,
             database=database,
             user=user,
             password=password)

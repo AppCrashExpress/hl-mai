@@ -14,6 +14,7 @@ def flatten(l):
 def get_unique_ids(table):
     connection = MySQLConnection(
         host="all-db",
+        port="6033",
         database="archdb",
         user="stud",
         password="stud"
@@ -40,6 +41,7 @@ def generate_cart_list(n=1):
 def main():
     connection = MySQLConnection(
         host="all-db",
+        port="6033",
         database="archdb",
         user="stud",
         password="stud"

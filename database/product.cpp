@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <sstream>
+#include <functional>
 
 #include <Poco/Data/MySQL/Connector.h>
 #include <Poco/Data/MySQL/MySQLException.h>
@@ -21,15 +22,18 @@ namespace database {
 void Product::init() {
   try {
     Poco::Data::Session session = database::Database::get().create_session();
-    Statement create_stmt(session);
-    create_stmt << "CREATE TABLE IF NOT EXISTS `Products` ("
-                << "`id` INT NOT NULL AUTO_INCREMENT,"
-                << "`name` VARCHAR(1024) NOT NULL,"
-                << "`count` INT NOT NULL,"
-                << "`value` INT NOT NULL,"
-                << "PRIMARY KEY (`id`), KEY `an` (`name`)"
-                << ");",
-        now;
+    for (const auto& hint : database::Database::get_all_sharding_hints()) {
+      Statement create_stmt(session);
+      create_stmt << "CREATE TABLE IF NOT EXISTS `Products` ("
+                  << "`id` INT NOT NULL AUTO_INCREMENT,"
+                  << "`name` VARCHAR(1024) NOT NULL,"
+                  << "`count` INT NOT NULL,"
+                  << "`value` INT NOT NULL,"
+                  << "PRIMARY KEY (`id`), KEY `an` (`name`)"
+                  << ");"
+                  << hint,
+          now;
+    }
   }
 
   catch (Poco::Data::MySQL::ConnectionException& e) {
@@ -69,17 +73,19 @@ Product Product::fromJSON(const std::string& str) {
 std::optional<Product> Product::read_by_id(long id) {
   try {
     Poco::Data::Session session = database::Database::get().create_session();
-    Poco::Data::Statement select(session);
-    Product p;
-    select << "SELECT id, name, count, value "
-              "FROM Products where id=?",
-        into(p._id), into(p._name), into(p._count), into(p._value), use(id),
-        range(0, 1);  //  iterate over result set one row at a time
+    for (const auto& hint : database::Database::get_all_sharding_hints()) {
+      Poco::Data::Statement select(session);
+      Product p;
+      select << "SELECT id, name, count, value "
+                "FROM Products where id=? " + hint,
+          into(p._id), into(p._name), into(p._count), into(p._value), use(id),
+          range(0, 1);  //  iterate over result set one row at a time
 
-    select.execute();
-    Poco::Data::RecordSet rs(select);
-    if (rs.moveFirst()) {
-      return p;
+      select.execute();
+      Poco::Data::RecordSet rs(select);
+      if (rs.moveFirst()) {
+        return p;
+      }
     }
   }
 
@@ -95,17 +101,19 @@ std::optional<Product> Product::read_by_id(long id) {
 std::vector<Product> Product::read_all() {
   try {
     Poco::Data::Session session = database::Database::get().create_session();
-    Statement select(session);
     std::vector<Product> result;
     Product p;
-    select << "SELECT id, name, count, value "
-              "FROM Products",
-        into(p._id), into(p._name), into(p._count), into(p._value),
-        range(0, 1);  //  iterate over result set one row at a time
+    for (const auto& hint : database::Database::get_all_sharding_hints()) {
+      Statement select(session);
+      select << "SELECT id, name, count, value "
+                "FROM Products" + hint,
+          into(p._id), into(p._name), into(p._count), into(p._value),
+          range(0, 1);  //  iterate over result set one row at a time
 
-    while (!select.done()) {
-      if (select.execute())
-        result.push_back(p);
+      while (!select.done()) {
+        if (select.execute())
+          result.push_back(p);
+      }
     }
 
     return result;
@@ -120,6 +128,11 @@ std::vector<Product> Product::read_all() {
   }
 }
 
+std::string Product::get_sharding_hint() {
+  std::hash<std::string> hasher;
+  return database::Database::get_sharding_hint(hasher(_name));
+}
+
 void Product::save_to_mysql() {
 
   try {
@@ -128,7 +141,7 @@ void Product::save_to_mysql() {
 
     insert
         << "INSERT INTO Products (name, count, value) "
-           "VALUES(?, ?, ?)",
+           "VALUES(?, ?, ?) " + get_sharding_hint(),
         use(_name), use(_count), use(_value);
 
     insert.execute();
