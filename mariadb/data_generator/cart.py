@@ -3,7 +3,7 @@ import string
 
 from faker import Faker
 
-from basemod import MySQLConnection
+import basemod
 
 
 fake = Faker()
@@ -12,7 +12,7 @@ def flatten(l):
     return [item for sublist in l for item in sublist]
 
 def get_unique_ids(table):
-    connection = MySQLConnection(
+    connection = basemod.MySQLConnection(
         host="all-db",
         port="6033",
         database="archdb",
@@ -39,7 +39,25 @@ def generate_cart_list(n=1):
     return flatten([generate_cart_entries(i) for i in range(n)])
 
 def main():
-    connection = MySQLConnection(
+    connection = None
+
+    for i in range(basemod.SHARD_COUNT):
+        connection = basemod.MySQLConnection(
+            host="all-db",
+            port="6033",
+            database="archdb",
+            user="stud",
+            password="stud"
+        )
+
+        connection.execute(f"""CREATE TABLE IF NOT EXISTS `Carts` (
+            `id`         INT NOT NULL AUTO_INCREMENT,
+            `user_id`    INT NOT NULL,
+            `product_id` INT NOT NULL,
+            PRIMARY KEY (`id`), KEY `uid` (`user_id`)
+        ); {basemod.get_hint(i)}""")
+
+    connection = basemod.MySQLConnection(
         host="all-db",
         port="6033",
         database="archdb",
@@ -47,17 +65,10 @@ def main():
         password="stud"
     )
 
-    connection.execute("""CREATE TABLE IF NOT EXISTS `Carts` (
-    `id`         INT NOT NULL AUTO_INCREMENT,
-    `user_id`    INT NOT NULL,
-    `product_id` INT NOT NULL,
-    PRIMARY KEY (`id`), KEY `uid` (`user_id`)
-    );""")
-
     values = generate_cart_list(200)
     connection.insert_values(("INSERT INTO `Carts` "
         "(`user_id`, `product_id`) "
-        "VALUES (%(user_id)s, %(product_id)s)"), values)
+        "VALUES (%(user_id)s, %(product_id)s)"), values, lambda x : x['user_id'])
 
 if __name__ == "__main__":
     main()

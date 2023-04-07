@@ -1,6 +1,7 @@
 #include "user.h"
 #include "../config/config.h"
 #include "database.h"
+#include "../helper.h"
 
 #include <Poco/Data/MySQL/Connector.h>
 #include <Poco/Data/MySQL/MySQLException.h>
@@ -136,8 +137,7 @@ std::optional<User> User::read_by_id(long id) {
 }
 
 std::string User::get_sharding_hint() {
-  std::hash<std::string> hasher;
-  auto hash = hasher(_login + _password);
+  long hash = get_hash(_login + _password);
   return database::Database::get_sharding_hint(hash);
 }
 

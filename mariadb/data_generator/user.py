@@ -3,7 +3,7 @@ import string
 
 from faker import Faker
 
-from basemod import MySQLConnection
+import basemod
 
 
 fake = Faker()
@@ -31,7 +31,29 @@ def generate_profile_list(n=1):
     return [generate_profile() for _ in range(n)]
 
 def main():
-    connection = MySQLConnection(
+    connection = None
+
+    for i in range(basemod.SHARD_COUNT):
+        connection = basemod.MySQLConnection(
+            host="all-db",
+            port="6033",
+            database="archdb",
+            user="stud",
+            password="stud"
+        )
+
+        connection.execute(f"""CREATE TABLE IF NOT EXISTS `User` (
+            `id`         INT NOT NULL AUTO_INCREMENT,
+            `first_name` VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+            `last_name`  VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+            `login`      VARCHAR(256) NOT NULL,
+            `password`   VARCHAR(256) NOT NULL,
+            `email`      VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,
+            `gender`     VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,
+            PRIMARY KEY (`id`), KEY `fn` (`first_name`), KEY `ln` (`last_name`)
+        ); {basemod.get_hint(i)}""")
+
+    connection = basemod.MySQLConnection(
         host="all-db",
         port="6033",
         database="archdb",
@@ -39,21 +61,10 @@ def main():
         password="stud"
     )
 
-    connection.execute("""CREATE TABLE IF NOT EXISTS `User` (
-        `id`         INT NOT NULL AUTO_INCREMENT,
-        `first_name` VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-        `last_name`  VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-        `login`      VARCHAR(256) NOT NULL,
-        `password`   VARCHAR(256) NOT NULL,
-        `email`      VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,
-        `gender`     VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,
-        PRIMARY KEY (`id`), KEY `fn` (`first_name`), KEY `ln` (`last_name`)
-    );""")
-
     values = generate_profile_list(200)
     connection.insert_values(("INSERT INTO `User` "
         "(`first_name`, `last_name`, `login`, `password`, `email`, `gender`) "
-        "VALUES (%(first_name)s, %(last_name)s, %(login)s, %(password)s, %(email)s, %(gender)s)"), values)
+        "VALUES (%(first_name)s, %(last_name)s, %(login)s, %(password)s, %(email)s, %(gender)s)"), values, lambda x : basemod.get_hash(x['login'] + x['password']))
 
 if __name__ == "__main__":
     main()

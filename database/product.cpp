@@ -13,6 +13,7 @@
 
 #include "../config/config.h"
 #include "database.h"
+#include "../helper.h"
 
 using namespace Poco::Data::Keywords;
 using Poco::Data::Session;
@@ -129,8 +130,7 @@ std::vector<Product> Product::read_all() {
 }
 
 std::string Product::get_sharding_hint() {
-  std::hash<std::string> hasher;
-  return database::Database::get_sharding_hint(hasher(_name));
+  return database::Database::get_sharding_hint(get_hash(_name));
 }
 
 void Product::save_to_mysql() {

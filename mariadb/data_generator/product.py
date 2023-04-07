@@ -3,7 +3,7 @@ import string
 
 from faker import Faker
 
-from basemod import MySQLConnection
+import basemod
 
 
 fake = Faker()
@@ -19,7 +19,26 @@ def generate_product_list(n=1):
     return [generate_product() for _ in range(n)]
 
 def main():
-    connection = MySQLConnection(
+    connection = None
+
+    for i in range(basemod.SHARD_COUNT):
+        connection = basemod.MySQLConnection(
+            host="all-db",
+            port="6033",
+            database="archdb",
+            user="stud",
+            password="stud"
+        )
+
+        connection.execute(f"""CREATE TABLE IF NOT EXISTS `Products` (
+            `id`    INT NOT NULL AUTO_INCREMENT,
+            `name`  VARCHAR(1024) NOT NULL,
+            `count` INT NOT NULL,
+            `value` INT NOT NULL,
+            PRIMARY KEY (`id`), KEY `an` (`name`)
+        ); {basemod.get_hint(i)}""")
+
+    connection = basemod.MySQLConnection(
         host="all-db",
         port="6033",
         database="archdb",
@@ -27,18 +46,10 @@ def main():
         password="stud"
     )
 
-    connection.execute("""CREATE TABLE IF NOT EXISTS `Products` (
-        `id`    INT NOT NULL AUTO_INCREMENT,
-        `name`  VARCHAR(1024) NOT NULL,
-        `count` INT NOT NULL,
-        `value` INT NOT NULL,
-        PRIMARY KEY (`id`), KEY `an` (`name`)
-    );""")
-
     values = generate_product_list(200)
     connection.insert_values(("INSERT INTO `Products` "
         "(`name`, `count`, `value`) "
-        "VALUES (%(name)s, %(count)s, %(value)s)"), values)
+        "VALUES (%(name)s, %(count)s, %(value)s)"), values, lambda x : basemod.get_hash(x['name']))
 
 if __name__ == "__main__":
     main()
