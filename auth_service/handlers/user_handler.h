@@ -60,8 +60,9 @@ class UserHandler : public HTTPRequestHandler {
       if (form.has("id") &&
           (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET)) {
         long id = atol(form.get("id").c_str());
+        bool use_cache = !form.has("no_cache");
 
-        std::optional<database::User> result = database::User::read_by_id(id);
+        std::optional<database::User> result = database::User::read_by_id(id, use_cache);
         if (result) {
           response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
           response.setChunkedTransferEncoding(true);

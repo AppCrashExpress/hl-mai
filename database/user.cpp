@@ -109,10 +109,12 @@ std::optional<long> User::auth(std::string& login, std::string& password) {
   }
   return {};
 }
-std::optional<User> User::read_by_id(long id) {
-  std::optional<User> opt_user = read_from_cache_by_id(id);
-  if (opt_user) {
-    return *opt_user;
+std::optional<User> User::read_by_id(long id, bool use_cache) {
+  if (use_cache) {
+    std::optional<User> opt_user = read_from_cache_by_id(id);
+    if (opt_user) {
+      return *opt_user;
+    }
   }
 
   try {
@@ -129,7 +131,9 @@ std::optional<User> User::read_by_id(long id) {
       select.execute();
       Poco::Data::RecordSet rs(select);
       if (rs.moveFirst()) {
-        a.save_to_cache();
+        if (use_cache) {
+          a.save_to_cache();
+        }
         return a;
       }
     }
