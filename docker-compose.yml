@@ -103,6 +103,17 @@ services:
       all-db:
         condition: service_healthy
 
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    command: redis-server --save 20 1 --loglevel warning
+    networks:
+      - arch-network
+    volumes:
+      - cache:/data
+
   auth-service:
     build:
       context: .
@@ -112,12 +123,15 @@ services:
       - DB_DATABASE=archdb
       - DB_LOGIN=stud
       - DB_PASSWORD=stud
+      - CACHE=cache:6379
     ports:
       - 8080:8080
     entrypoint: /app/build/auth_service
     networks:
       - arch-network
     depends_on:
+      cache:
+        condition: service_started
       all-db:
         condition: service_healthy
 
@@ -130,6 +144,7 @@ services:
       - DB_DATABASE=archdb
       - DB_LOGIN=stud
       - DB_PASSWORD=stud
+      - CACHE=cache:6379
       - SERVICE_HOST=auth-service
     ports:
       - 8081:8081
@@ -149,6 +164,7 @@ services:
       - DB_DATABASE=archdb
       - DB_LOGIN=stud
       - DB_PASSWORD=stud
+      - CACHE=cache:6379
       - SERVICE_HOST=auth-service
       - PRODUCT_HOST=product-service
     ports:
@@ -165,6 +181,7 @@ volumes:
   maria-db-volume-2:
   maria-db-volume-3:
   proxysql-data:
+  cache:
 
 networks:
   arch-network:

@@ -2,6 +2,7 @@
 #include "../config/config.h"
 #include "database.h"
 #include "../helper.h"
+#include "cache.h"
 
 #include <Poco/Data/MySQL/Connector.h>
 #include <Poco/Data/MySQL/MySQLException.h>
@@ -109,6 +110,11 @@ std::optional<long> User::auth(std::string& login, std::string& password) {
   return {};
 }
 std::optional<User> User::read_by_id(long id) {
+  std::optional<User> opt_user = read_from_cache_by_id(id);
+  if (opt_user) {
+    return *opt_user;
+  }
+
   try {
     Poco::Data::Session session = database::Database::get().create_session();
     User a;
@@ -122,8 +128,10 @@ std::optional<User> User::read_by_id(long id) {
 
       select.execute();
       Poco::Data::RecordSet rs(select);
-      if (rs.moveFirst())
+      if (rs.moveFirst()) {
+        a.save_to_cache();
         return a;
+      }
     }
   }
 
@@ -237,6 +245,28 @@ void User::save_to_mysql() {
     throw;
   }
 }
+
+void User::save_to_cache() {
+  std::stringstream ss;
+  Poco::JSON::Stringifier::stringify(toJSON(), ss);
+  std::string message = ss.str();
+  database::Cache::get().put(_id, message);
+}
+
+std::optional<User> User::read_from_cache_by_id(long id) {
+  try {
+    std::string result;
+    if (database::Cache::get().get(id, result))
+      return fromJSON(result);
+    else
+      return std::optional<User>();
+  }
+  catch (std::exception &err) {
+    // std::cerr << "error:" << err.what() << std::endl;
+    return std::optional<User>();
+  }
+}
+
 
 const std::string& User::get_login() const {
   return _login;

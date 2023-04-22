@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.2)
 
 project(hl_service_mesh C CXX)
 
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(REDISCPP_FLAGS "-DREDISCPP_HEADER_ONLY=ON")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall ${REDISCPP_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g0 -Wall -DNDEBUG ${REDISCPP_FLAGS}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -30,6 +34,7 @@ link_directories("/usr/local/lib")
 add_executable(${AUTH_SERVICE} auth_service/main.cpp
                                  config/config.cpp
                                  database/database.cpp
+                                 database/cache.cpp
                                  database/user.cpp)
 target_include_directories(${AUTH_SERVICE} PRIVATE "${CMAKE_BINARY_DIR}")
 target_compile_options(${AUTH_SERVICE} PRIVATE -Wall -Wextra -pedantic -Werror )
@@ -40,6 +45,7 @@ target_link_libraries(${AUTH_SERVICE} PRIVATE
                              ${Poco_LIBRARIES}
                              "PocoData"
                              "PocoDataMySQL"
+                             "rdkafka++"
                              "mysqlclient"
                              ZLIB::ZLIB)
 
@@ -56,6 +62,7 @@ target_link_libraries(${PRODUCT_SERVICE} PRIVATE
                              ${Poco_LIBRARIES}
                              "PocoData"
                              "PocoDataMySQL"
+                             "rdkafka++"
                              "mysqlclient"
                              ZLIB::ZLIB)
 
@@ -72,5 +79,6 @@ target_link_libraries(${CART_SERVICE} PRIVATE
                              ${Poco_LIBRARIES}
                              "PocoData"
                              "PocoDataMySQL"
+                             "rdkafka++"
                              "mysqlclient"
                              ZLIB::ZLIB)
