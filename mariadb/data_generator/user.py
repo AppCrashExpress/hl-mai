@@ -61,7 +61,7 @@ def main():
         password="stud"
     )
 
-    values = generate_profile_list(5000)
+    values = generate_profile_list(500)
     connection.insert_values(("INSERT INTO `User` "
         "(`first_name`, `last_name`, `login`, `password`, `email`, `gender`) "
         "VALUES (%(first_name)s, %(last_name)s, %(login)s, %(password)s, %(email)s, %(gender)s)"), values, lambda x : basemod.get_hash(x['login'] + x['password']))
